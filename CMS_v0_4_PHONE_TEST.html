@@ -1,0 +1,761 @@
+<!doctype html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Field ID CMS v0.4</title><style>
+:root{font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#17251c;background:#f4f7f5;--g:#1f5f43;--g2:#174b35;--line:#d9e2dc;--muted:#65736a;--card:#fff;--danger:#9c2f2f}
+*{box-sizing:border-box}body{margin:0;background:#f4f7f5}button,input,select,textarea{font:inherit}button{cursor:pointer}.hidden{display:none!important}
+.shell{min-height:100vh}.topbar{position:sticky;top:0;z-index:10;background:#163e2d;color:#fff;padding:14px 18px;display:flex;align-items:center;justify-content:space-between;gap:12px}
+.brand b{display:block;font-size:1.08rem}.brand span{font-size:.82rem;opacity:.78}.wrap{max-width:1150px;margin:auto;padding:18px}
+.card{background:#fff;border:1px solid var(--line);border-radius:16px;padding:18px;margin-bottom:16px;box-shadow:0 2px 10px rgba(20,50,35,.04)}
+h1,h2,h3{margin-top:0}.muted{color:var(--muted)}.small{font-size:.85rem}.tabs{display:flex;gap:8px;overflow:auto;margin-bottom:16px}
+.tab{border:1px solid var(--line);background:white;border-radius:999px;padding:10px 14px;font-weight:750;white-space:nowrap}.tab.active{background:var(--g);color:#fff;border-color:var(--g)}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px}.stat{background:#edf4ef;border-radius:14px;padding:14px}.stat b{display:block;font-size:1.6rem;color:var(--g)}
+label{display:block;font-weight:750;margin:10px 0 6px}.field{width:100%;padding:11px;border:1px solid #cbd7cf;border-radius:10px;background:#fff}textarea.field{min-height:100px;resize:vertical}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}.grow{flex:1 1 260px}.primary,.secondary,.danger{border:0;border-radius:10px;padding:10px 14px;font-weight:800}
+.primary{background:var(--g);color:white}.secondary{background:#eef3f0;color:#20382b;border:1px solid var(--line)}.danger{background:#fff0f0;color:var(--danger);border:1px solid #efcaca}
+.list{display:grid;gap:9px}.item{border:1px solid var(--line);background:#fff;border-radius:12px;padding:12px;display:flex;justify-content:space-between;gap:12px;align-items:center}
+.login{max-width:440px;margin:12vh auto;padding:22px}.error{background:#fff0f0;border:1px solid #efcaca;padding:10px;border-radius:10px;color:#7d2525}.ok{background:#edf8f1;border:1px solid #c7e4d1;padding:10px;border-radius:10px;color:#1f5f43}
+.photo-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px}.photo-card{border:1px solid var(--line);border-radius:12px;overflow:hidden;background:#fff;position:relative}.photo-card.inactive{opacity:.55}
+.photo-card img{width:100%;height:165px;object-fit:cover;background:#111}.photo-body{padding:10px}.pill{display:inline-block;background:#edf4ef;border-radius:999px;padding:5px 9px;margin:3px 4px 3px 0;font-size:.78rem;font-weight:700}
+.photo-select{position:absolute;top:8px;left:8px;z-index:2;transform:scale(1.4)}.toolbar{position:sticky;top:66px;z-index:8;background:#fff;border:1px solid var(--line);border-radius:14px;padding:10px;margin-bottom:12px}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:30;display:flex;align-items:center;justify-content:center;padding:18px}.modal-card{background:#fff;width:min(680px,100%);max-height:92vh;overflow:auto;border-radius:16px;padding:18px}
+.checks{display:flex;gap:8px;flex-wrap:wrap}.check{border:1px solid var(--line);background:#fafcfa;border-radius:999px;padding:7px 10px}.check input{margin-right:5px}.preview-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:8px}.preview{border:1px solid var(--line);border-radius:10px;padding:7px}.preview img{width:100%;height:100px;object-fit:cover;border-radius:7px}
+.badge{position:absolute;right:8px;top:8px;background:#fff8;border-radius:999px;padding:4px 7px;font-size:.72rem;font-weight:800}
+@media(max-width:600px){.wrap{padding:12px}.topbar{padding:12px}.photo-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.photo-card img{height:140px}.toolbar{top:62px}}
+
+.update-banner{border:1px solid #b9cfbf;border-radius:14px;background:#edf5ef;padding:11px 13px}
+.update-banner-title{font-weight:950;color:var(--g);font-size:.94rem;line-height:1.25}
+.update-banner-copy{color:#536158;font-size:.82rem;line-height:1.35;margin-top:4px}
+.update-banner-meta{color:#316147;font-weight:850;font-size:.78rem;margin-top:5px}
+</style></head><body><div id="app"></div><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script>const SUPABASE_URL='https://mnbfglpvwkvpsbfgifro.supabase.co';const SUPABASE_PUBLISHABLE_KEY='sb_publishable_S2yMA1brHFjbZaaoU3tm5Q_DnZjyjXZ';const STORAGE_BUCKET='field-id-content';const client=window.supabase.createClient(SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY,{auth:{persistSession:true,autoRefreshToken:true}});
+// --- utils.js ---
+const $=(s,r=document)=>r.querySelector(s);
+const $$=(s,r=document)=>[...r.querySelectorAll(s)];
+const esc=(v='')=>String(v).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+const slugify=s=>String(s).toLowerCase().trim().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
+const rotateStyle=deg=>deg?`transform:rotate(${deg}deg);object-fit:contain;background:#111`:'';
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+
+// --- data.js ---
+async function loadSpecies(){return client.from('fid_species').select('*').order('common_name')}
+async function saveSpecies(payload,id=null){
+  return id?client.from('fid_species').update(payload).eq('id',id):client.from('fid_species').insert(payload);
+}
+async function loadTags(){return client.from('fid_tags').select('*').order('sort_order')}
+async function loadPhotos(){
+  return client.from('fid_photos')
+    .select('*,fid_species(common_name),fid_photo_tags(tag_id,fid_tags(id,slug,label))')
+    .order('created_at',{ascending:false});
+}
+async function updatePhoto(id,payload){return client.from('fid_photos').update(payload).eq('id',id)}
+async function deletePhotoRow(id){return client.from('fid_photos').delete().eq('id',id)}
+async function replacePhotoTags(photoId,tagIds){
+  const d=await client.from('fid_photo_tags').delete().eq('photo_id',photoId);
+  if(d.error)return d;
+  if(!tagIds.length)return {error:null};
+  return client.from('fid_photo_tags').insert(tagIds.map(tag_id=>({photo_id:photoId,tag_id})));
+}
+async function addTags(photoIds,tagIds){
+  if(!photoIds.length||!tagIds.length)return {error:null};
+  const rows=[];
+  for(const photo_id of photoIds)for(const tag_id of tagIds)rows.push({photo_id,tag_id});
+  return client.from('fid_photo_tags').upsert(rows,{onConflict:'photo_id,tag_id',ignoreDuplicates:true});
+}
+async function removeTags(photoIds,tagIds){
+  if(!photoIds.length||!tagIds.length)return {error:null};
+  return client.from('fid_photo_tags').delete().in('photo_id',photoIds).in('tag_id',tagIds);
+}
+async function bulkUpdatePhotos(ids,payload){
+  if(!ids.length)return {error:null};
+  return client.from('fid_photos').update(payload).in('id',ids);
+}
+
+
+async function loadTips(){
+  return client.from('fid_tips')
+    .select('*,fid_species(common_name),fid_tags(slug,label),fid_photos(original_filename,storage_path)')
+    .order('created_at',{ascending:false});
+}
+async function saveTip(payload,id=null){
+  return id ? client.from('fid_tips').update(payload).eq('id',id)
+            : client.from('fid_tips').insert(payload);
+}
+async function deleteTip(id){
+  return client.from('fid_tips').delete().eq('id',id);
+}
+
+async function loadComparisons(){
+  return client.from('fid_comparisons')
+    .select('*,correct:fid_species!fid_comparisons_correct_species_id_fkey(common_name),wrong:fid_species!fid_comparisons_wrong_species_id_fkey(common_name),stage_tag:fid_tags!fid_comparisons_stage_tag_id_fkey(id,slug,label),fid_photos(original_filename,storage_path),required_tags:fid_comparison_required_tags(tag_id,fid_tags(id,slug,label))')
+    .order('created_at',{ascending:false});
+}
+async function saveComparison(payload,id=null){
+  return id ? client.from('fid_comparisons').update(payload).eq('id',id)
+            : client.from('fid_comparisons').insert(payload);
+}
+async function deleteComparison(id){
+  return client.from('fid_comparisons').delete().eq('id',id);
+}
+
+async function loadDistractors(){
+  return client.from('fid_distractor_options')
+    .select('id,species_id,distractor_species_id,distractor_label,sort_order,species:fid_species!fid_distractor_options_species_id_fkey(common_name),distractor:fid_species!fid_distractor_options_distractor_species_id_fkey(common_name)')
+    .order('sort_order');
+}
+async function replaceDistractors(speciesId,distractorIds,labelOnly=[]){
+  const d=await client.from('fid_distractor_options').delete().eq('species_id',speciesId);
+  if(d.error)return d;
+  const rows=[
+    ...distractorIds.map((id,i)=>({species_id:speciesId,distractor_species_id:id,distractor_label:null,sort_order:i})),
+    ...labelOnly.filter(Boolean).map((label,i)=>({species_id:speciesId,distractor_species_id:null,distractor_label:label,sort_order:distractorIds.length+i}))
+  ];
+  if(!rows.length)return {error:null};
+  return client.from('fid_distractor_options').insert(rows);
+}
+
+
+async function loadReleases(){
+  return client.from('fid_releases').select('*').order('release_date',{ascending:false});
+}
+async function saveReleaseBanner(id,payload){
+  return client.from('fid_releases').update(payload).eq('id',id);
+}
+
+// --- storage.js ---
+function publicUrl(path){return client.storage.from(STORAGE_BUCKET).getPublicUrl(path).data.publicUrl}
+async function uploadImage(path,file){return client.storage.from(STORAGE_BUCKET).upload(path,file,{upsert:false,contentType:file.type})}
+async function removeImages(paths){return client.storage.from(STORAGE_BUCKET).remove(paths)}
+
+// --- species.js ---
+
+function renderSpeciesPage(state,onRefresh){
+  const page=$('#page');
+  page.innerHTML=`
+    <div class="card">
+      <div class="row">
+        <div class="grow">
+          <h2 style="margin-bottom:4px">Species</h2>
+          <div class="muted">Create and edit species records.</div>
+        </div>
+        <button id="addSpecies" class="primary">+ Add Species</button>
+      </div>
+    </div>
+    <div class="card">
+      <div class="row">
+        <input id="speciesSearch" class="field grow" placeholder="Search species...">
+        <div class="small muted"><span id="speciesCount">${state.species.length}</span> species</div>
+      </div>
+      <div id="speciesList" class="list" style="margin-top:12px"></div>
+    </div>`;
+
+  $('#addSpecies').onclick=()=>openSpeciesModal(null,onRefresh);
+  $('#speciesSearch').oninput=()=>paintSpeciesList(state,onRefresh);
+  paintSpeciesList(state,onRefresh);
+}
+
+function paintSpeciesList(state,onRefresh){
+  const list=$('#speciesList');
+  if(!list) return;
+
+  const q=($('#speciesSearch')?.value||'').trim().toLowerCase();
+  const rows=[...(state.species||[])]
+    .filter(sp=>{
+      if(!q) return true;
+      return (sp.common_name||'').toLowerCase().includes(q)
+        || (sp.scientific_name||'').toLowerCase().includes(q);
+    })
+    .sort((a,b)=>(a.common_name||'').localeCompare(b.common_name||''));
+
+  $('#speciesCount').textContent=rows.length;
+
+  if(!rows.length){
+    list.innerHTML='<div class="muted">No species found.</div>';
+    return;
+  }
+
+  list.innerHTML=rows.map(sp=>`
+    <div class="item">
+      <div class="item-main">
+        <b>${esc(sp.common_name||'Unnamed species')}</b>
+        <div class="muted small">${esc(sp.scientific_name||'No scientific name')}</div>
+        ${sp.is_active===false?'<span class="pill">Inactive</span>':''}
+      </div>
+      <div class="row">
+        <button class="secondary editSpecies" data-id="${sp.id}">Edit</button>
+      </div>
+    </div>`).join('');
+
+  $$('.editSpecies').forEach(btn=>{
+    btn.onclick=()=>openSpeciesModal(
+      state.species.find(sp=>sp.id===btn.dataset.id),
+      onRefresh
+    );
+  });
+}
+
+function openSpeciesModal(sp,onRefresh){
+  const modal=document.createElement('div');
+  modal.className='modal';
+  modal.innerHTML=`<div class="modal-card">
+    <h2>${sp?'Edit':'Add'} Species</h2>
+    <div id="spMsg"></div>
+
+    <label>Common name</label>
+    <input id="spCommon" class="field" value="${esc(sp?.common_name||'')}">
+
+    <label>Scientific name</label>
+    <input id="spScientific" class="field" value="${esc(sp?.scientific_name||'')}">
+
+    <label>Notes</label>
+    <textarea id="spNotes" class="field">${esc(sp?.notes||'')}</textarea>
+
+    <label class="check">
+      <input id="spActive" type="checkbox" ${sp?.is_active===false?'':'checked'}>
+      Active in game
+    </label>
+
+    <div class="row" style="margin-top:16px">
+      <button id="spSave" class="primary">Save</button>
+      <button id="spCancel" class="secondary">Cancel</button>
+    </div>
+  </div>`;
+
+  document.body.appendChild(modal);
+
+  $('#spCancel',modal).onclick=()=>modal.remove();
+  $('#spSave',modal).onclick=async()=>{
+    const payload={
+      common_name:$('#spCommon',modal).value.trim(),
+      scientific_name:$('#spScientific',modal).value.trim()||null,
+      notes:$('#spNotes',modal).value.trim()||null,
+      is_active:$('#spActive',modal).checked
+    };
+
+    if(!payload.common_name){
+      $('#spMsg',modal).innerHTML='<div class="error">Common name is required.</div>';
+      return;
+    }
+
+    const r=await saveSpecies(payload,sp?.id||null);
+    if(r.error){
+      $('#spMsg',modal).innerHTML=`<div class="error">${esc(r.error.message)}</div>`;
+      return;
+    }
+
+    modal.remove();
+    await onRefresh();
+  };
+}
+
+// --- upload.js ---
+function renderUploadPage(state,onRefresh){
+  const opts=state.species.filter(x=>x.is_active).map(s=>`<option value="${s.id}">${esc(s.common_name)}</option>`).join('');
+  $('#page').innerHTML=`<div class="card"><h2>Bulk Photo Upload</h2><p class="muted">Upload many images to one species at once and apply initial tags to the whole batch.</p><div id="upMsg"></div>
+  <label>Species</label><select id="upSpecies" class="field"><option value="">Choose species...</option>${opts}</select>
+  <label>Photos</label><input id="upFiles" class="field" type="file" accept="image/jpeg,image/png,image/webp" multiple>
+  <label>Initial tags</label><div class="checks">${state.tags.map(t=>`<label class="check"><input type="checkbox" name="upTag" value="${t.id}">${esc(t.label)}</label>`).join('')}</div>
+  <label>Display orientation</label><select id="upOrientation" class="field"><option value="0">Normal</option><option value="90">90° clockwise</option><option value="180">180°</option><option value="270">90° counterclockwise</option></select>
+  <div id="upPreview" class="preview-list" style="margin-top:14px"></div><button id="upGo" class="primary" style="margin-top:14px">Upload Batch</button></div>`;
+  $('#upFiles').onchange=()=>previewFiles();
+  $('#upGo').onclick=()=>uploadBatch(state,onRefresh);
+}
+function previewFiles(){
+  const files=[...$('#upFiles').files];
+  $('#upPreview').innerHTML=files.map((f,i)=>`<div class="preview"><img id="pv${i}"><div class="small">${esc(f.name)}</div></div>`).join('');
+  files.forEach((f,i)=>{const r=new FileReader();r.onload=()=>{$(`#pv${i}`).src=r.result};r.readAsDataURL(f)});
+}
+async function uploadBatch(state,onRefresh){
+  const speciesId=$('#upSpecies').value, files=[...$('#upFiles').files], orientation=Number($('#upOrientation').value);
+  const tagIds=$$('input[name=upTag]:checked').map(x=>x.value);
+  if(!speciesId){$('#upMsg').innerHTML='<div class="error">Choose a species.</div>';return}
+  if(!files.length){$('#upMsg').innerHTML='<div class="error">Choose at least one photo.</div>';return}
+  const sp=state.species.find(x=>x.id===speciesId);$('#upGo').disabled=true;
+  for(let i=0;i<files.length;i++){
+    const file=files[i], safe=file.name.replace(/[^a-zA-Z0-9._-]/g,'_');
+    const path=`species/${slugify(sp.common_name)}/${crypto.randomUUID()}-${safe}`;
+    $('#upMsg').innerHTML=`<div class="ok">Uploading ${i+1} of ${files.length}: ${esc(file.name)}</div>`;
+    const u=await uploadImage(path,file); if(u.error){$('#upMsg').innerHTML=`<div class="error">${esc(u.error.message)}</div>`;$('#upGo').disabled=false;return}
+    const p=await client.from('fid_photos').insert({species_id:speciesId,storage_path:path,original_filename:file.name,orientation_degrees:orientation,is_active:true}).select('id').single();
+    if(p.error){await client.storage.from(STORAGE_BUCKET).remove([path]);$('#upMsg').innerHTML=`<div class="error">${esc(p.error.message)}</div>`;$('#upGo').disabled=false;return}
+    if(tagIds.length){
+      const l=await client.from('fid_photo_tags').insert(tagIds.map(tag_id=>({photo_id:p.data.id,tag_id})));
+      if(l.error){$('#upMsg').innerHTML=`<div class="error">${esc(l.error.message)}</div>`;$('#upGo').disabled=false;return}
+    }
+  }
+  $('#upMsg').innerHTML=`<div class="ok"><b>Done.</b> Uploaded ${files.length} photos.</div>`;$('#upGo').disabled=false;await onRefresh();
+}
+
+// --- photos.js ---
+let selected=new Set();
+
+function renderPhotosPage(state,onRefresh){
+  const spOpts=state.species.map(s=>`<option value="${s.id}">${esc(s.common_name)}</option>`).join('');
+  $('#page').innerHTML=`<div class="card"><div class="row"><div class="grow"><h2 style="margin-bottom:4px">Photo Library</h2><div class="muted">Edit one photo or select many for bulk changes.</div></div><input id="photoSearch" class="field grow" placeholder="Search species or filename..."></div></div>
+  <div id="bulkBar" class="toolbar hidden"><div class="row"><b><span id="selCount">0</span> selected</b>
+  <button id="bulkTags" class="secondary">Tags</button><button id="bulkSpecies" class="secondary">Change Species</button><button id="bulkOff" class="secondary">Deactivate</button><button id="bulkOn" class="secondary">Activate</button><button id="clearSel" class="secondary">Clear</button></div></div>
+  <div id="photoGrid" class="photo-grid"></div>`;
+  $('#photoSearch').oninput=()=>paint(state,onRefresh);
+  $('#bulkTags').onclick=()=>openBulkTags(state,onRefresh);
+  $('#bulkSpecies').onclick=()=>openBulkSpecies(state,onRefresh);
+  $('#bulkOff').onclick=()=>bulkStatus(false,onRefresh);
+  $('#bulkOn').onclick=()=>bulkStatus(true,onRefresh);
+  $('#clearSel').onclick=()=>{selected.clear();paint(state,onRefresh)};
+  paint(state,onRefresh);
+}
+function tagsFor(p){return (p.fid_photo_tags||[]).map(x=>x.fid_tags).filter(Boolean)}
+function paint(state,onRefresh){
+  const q=($('#photoSearch')?.value||'').toLowerCase();
+  const rows=state.photos.filter(p=>!q||(p.fid_species?.common_name||'').toLowerCase().includes(q)||(p.original_filename||'').toLowerCase().includes(q));
+  $('#photoGrid').innerHTML=rows.map(p=>`<div class="photo-card ${p.is_active?'':'inactive'}">
+    <input class="photo-select" type="checkbox" data-id="${p.id}" ${selected.has(p.id)?'checked':''}>
+    ${p.is_active?'':'<div class="badge">Inactive</div>'}
+    <img src="${esc(publicUrl(p.storage_path))}" style="${rotateStyle(p.orientation_degrees)}" loading="lazy">
+    <div class="photo-body"><b>${esc(p.fid_species?.common_name||'Unknown')}</b><div class="muted small">${esc(p.original_filename||p.storage_path)}</div>
+    <div>${tagsFor(p).map(t=>`<span class="pill">${esc(t.label)}</span>`).join('')}</div>
+    <button class="secondary editPhoto" data-id="${p.id}" style="width:100%;margin-top:7px">Edit</button></div></div>`).join('')||'<div class="muted">No photos yet.</div>';
+  $$('.photo-select').forEach(c=>c.onchange=()=>{c.checked?selected.add(c.dataset.id):selected.delete(c.dataset.id);syncBulk()});
+  $$('.editPhoto').forEach(b=>b.onclick=()=>openPhotoEditor(state,state.photos.find(p=>p.id===b.dataset.id),onRefresh));
+  syncBulk();
+}
+function syncBulk(){
+  const n=selected.size;$('#selCount').textContent=n;$('#bulkBar').classList.toggle('hidden',n===0);
+}
+function openPhotoEditor(state,p,onRefresh){
+  const current=new Set(tagsFor(p).map(t=>t.id));
+  const m=document.createElement('div');m.className='modal';
+  m.innerHTML=`<div class="modal-card"><h2>Edit Photo</h2><div id="photoMsg"></div>
+  <img src="${esc(publicUrl(p.storage_path))}" style="width:100%;max-height:320px;object-fit:contain;background:#111;${rotateStyle(p.orientation_degrees)}">
+  <label>Species</label><select id="peSpecies" class="field">${state.species.map(s=>`<option value="${s.id}" ${s.id===p.species_id?'selected':''}>${esc(s.common_name)}</option>`).join('')}</select>
+  <label>Tags</label><div class="checks">${state.tags.map(t=>`<label class="check"><input type="checkbox" name="peTag" value="${t.id}" ${current.has(t.id)?'checked':''}>${esc(t.label)}</label>`).join('')}</div>
+  <label>Orientation</label><select id="peOrientation" class="field">${[0,90,180,270].map(d=>`<option value="${d}" ${d===p.orientation_degrees?'selected':''}>${d===0?'Normal':d+'° clockwise'}</option>`).join('')}</select>
+  <label>Alt text</label><input id="peAlt" class="field" value="${esc(p.alt_text||'')}">
+  <label>Photographer / attribution</label><input id="pePhotographer" class="field" value="${esc(p.photographer||'')}">
+  <label>Source URL</label><input id="peSource" class="field" value="${esc(p.source_url||'')}">
+  <label>License code</label><input id="peLicense" class="field" value="${esc(p.license_code||'')}">
+  <label class="check"><input id="peActive" type="checkbox" ${p.is_active?'checked':''}> Active in game</label>
+  <div class="row" style="margin-top:16px"><button id="peSave" class="primary">Save Changes</button><button id="peCancel" class="secondary">Cancel</button><button id="peDelete" class="danger">Delete Permanently</button></div></div>`;
+  document.body.appendChild(m);
+  $('#peCancel',m).onclick=()=>m.remove();
+  $('#peSave',m).onclick=async()=>{
+    const payload={species_id:$('#peSpecies',m).value,orientation_degrees:Number($('#peOrientation',m).value),alt_text:$('#peAlt',m).value.trim()||null,photographer:$('#pePhotographer',m).value.trim()||null,source_url:$('#peSource',m).value.trim()||null,license_code:$('#peLicense',m).value.trim()||null,is_active:$('#peActive',m).checked};
+    const a=await updatePhoto(p.id,payload);if(a.error){$('#photoMsg',m).innerHTML=`<div class="error">${esc(a.error.message)}</div>`;return}
+    const ids=$$('input[name=peTag]:checked',m).map(x=>x.value);const b=await replacePhotoTags(p.id,ids);if(b.error){$('#photoMsg',m).innerHTML=`<div class="error">${esc(b.error.message)}</div>`;return}
+    m.remove();await onRefresh();
+  };
+  $('#peDelete',m).onclick=async()=>{
+    if(!confirm(`Permanently delete this photo?\n\n${p.original_filename||p.storage_path}\n\nThis removes it from both the database and Storage.`))return;
+    const s=await removeImages([p.storage_path]);if(s.error){$('#photoMsg',m).innerHTML=`<div class="error">${esc(s.error.message)}</div>`;return}
+    const d=await deletePhotoRow(p.id);if(d.error){$('#photoMsg',m).innerHTML=`<div class="error">${esc(d.error.message)}</div>`;return}
+    selected.delete(p.id);m.remove();await onRefresh();
+  };
+}
+function openBulkTags(state,onRefresh){
+  const m=document.createElement('div');m.className='modal';
+  m.innerHTML=`<div class="modal-card"><h2>Bulk Tags</h2><p>${selected.size} photos selected.</p><div class="checks">${state.tags.map(t=>`<label class="check"><input type="checkbox" name="bt" value="${t.id}">${esc(t.label)}</label>`).join('')}</div>
+  <div id="btMsg"></div><div class="row" style="margin-top:16px"><button id="btAdd" class="primary">Add Selected Tags</button><button id="btRemove" class="secondary">Remove Selected Tags</button><button id="btCancel" class="secondary">Cancel</button></div></div>`;
+  document.body.appendChild(m);$('#btCancel',m).onclick=()=>m.remove();
+  async function go(kind){const ids=$$('input[name=bt]:checked',m).map(x=>x.value);if(!ids.length){$('#btMsg',m).innerHTML='<div class="error">Choose at least one tag.</div>';return}
+    const r=kind==='add'?await addTags([...selected],ids):await removeTags([...selected],ids);if(r.error){$('#btMsg',m).innerHTML=`<div class="error">${esc(r.error.message)}</div>`;return}m.remove();await onRefresh();}
+  $('#btAdd',m).onclick=()=>go('add');$('#btRemove',m).onclick=()=>go('remove');
+}
+function openBulkSpecies(state,onRefresh){
+  const m=document.createElement('div');m.className='modal';
+  m.innerHTML=`<div class="modal-card"><h2>Change Species</h2><p>Move ${selected.size} selected photos to:</p><select id="bsSpecies" class="field">${state.species.map(s=>`<option value="${s.id}">${esc(s.common_name)}</option>`).join('')}</select><div class="row" style="margin-top:16px"><button id="bsGo" class="primary">Move Photos</button><button id="bsCancel" class="secondary">Cancel</button></div></div>`;
+  document.body.appendChild(m);$('#bsCancel',m).onclick=()=>m.remove();$('#bsGo',m).onclick=async()=>{const r=await bulkUpdatePhotos([...selected],{species_id:$('#bsSpecies',m).value});if(r.error){alert(r.error.message);return}m.remove();await onRefresh()};
+}
+async function bulkStatus(active,onRefresh){const r=await bulkUpdatePhotos([...selected],{is_active:active});if(r.error){alert(r.error.message);return}await onRefresh()}
+
+// --- learning.js ---
+
+function scopeFields(scope,state,current={}){
+  if(scope==='stage'){
+    return `<label>Stage / visible feature</label>
+      <select id="scopeTag" class="field">
+        <option value="">Choose tag...</option>
+        ${state.tags.map(t=>`<option value="${t.id}" ${current.stage_tag_id===t.id?'selected':''}>${esc(t.label)}</option>`).join('')}
+      </select>`;
+  }
+  if(scope==='photo'){
+    const photos=state.photos.filter(p=>p.species_id===current.species_id || !current.species_id);
+    return `<label>Exact photo</label>
+      <select id="scopePhoto" class="field">
+        <option value="">Choose photo...</option>
+        ${photos.map(p=>`<option value="${p.id}" ${current.photo_id===p.id?'selected':''}>${esc(p.original_filename||p.storage_path)}</option>`).join('')}
+      </select>`;
+  }
+  return '';
+}
+
+function renderTipsPage(state,onRefresh){
+  const page=$('#page');
+  page.innerHTML=`
+    <div class="card">
+      <div class="row">
+        <div class="grow"><h2 style="margin-bottom:4px">ID Cards</h2>
+        <div class="muted">General, stage-specific, and exact-photo teaching cards.</div></div>
+        <button id="addTip" class="primary">+ Add ID Card</button>
+      </div>
+    </div>
+    <div class="card">
+      <input id="tipSearch" class="field" placeholder="Search species or card text...">
+      <div id="tipList" class="list" style="margin-top:12px"></div>
+    </div>`;
+  $('#addTip').onclick=()=>openTipModal(state,null,onRefresh);
+  $('#tipSearch').oninput=()=>paintTips(state,onRefresh);
+  paintTips(state,onRefresh);
+}
+
+function paintTips(state,onRefresh){
+  const q=($('#tipSearch')?.value||'').toLowerCase();
+  const rows=state.tips.filter(t=>{
+    const hay=[t.fid_species?.common_name,t.scope,t.body,t.memory_text,t.fid_tags?.label,t.fid_photos?.original_filename].join(' ').toLowerCase();
+    return !q||hay.includes(q);
+  });
+  $('#tipList').innerHTML=rows.map(t=>`
+    <div class="item">
+      <div class="item-main">
+        <b>${esc(t.fid_species?.common_name||'Unknown')}</b>
+        <div class="small muted">${esc(t.scope)}${t.fid_tags?.label?' • '+esc(t.fid_tags.label):''}${t.fid_photos?.original_filename?' • '+esc(t.fid_photos.original_filename):''}</div>
+        <div style="margin-top:6px">${esc(t.body.slice(0,150))}${t.body.length>150?'…':''}</div>
+      </div>
+      <div class="row"><button class="secondary editTip" data-id="${t.id}">Edit</button></div>
+    </div>`).join('')||'<div class="muted">No ID cards yet.</div>';
+  $$('.editTip').forEach(b=>b.onclick=()=>openTipModal(state,state.tips.find(t=>t.id===b.dataset.id),onRefresh));
+}
+
+function openTipModal(state,tip,onRefresh){
+  const m=document.createElement('div');m.className='modal';
+  const sp=tip?.species_id||state.species[0]?.id||'';
+  const scope=tip?.scope||'general';
+  m.innerHTML=`<div class="modal-card">
+    <h2>${tip?'Edit':'Add'} ID Card</h2><div id="tipMsg"></div>
+    <label>Species</label><select id="tipSpecies" class="field">
+      ${state.species.map(s=>`<option value="${s.id}" ${s.id===sp?'selected':''}>${esc(s.common_name)}</option>`).join('')}
+    </select>
+    <label>Card type</label><select id="tipScope" class="field">
+      <option value="general" ${scope==='general'?'selected':''}>General</option>
+      <option value="stage" ${scope==='stage'?'selected':''}>Stage-specific</option>
+      <option value="photo" ${scope==='photo'?'selected':''}>Exact photo</option>
+    </select>
+    <div id="tipScopeFields"></div>
+    <label>ID text</label><textarea id="tipBody" class="field">${esc(tip?.body||'')}</textarea>
+    <label>Remember it</label><textarea id="tipMemory" class="field">${esc(tip?.memory_text||'')}</textarea>
+    <label>Source name</label><input id="tipSourceName" class="field" value="${esc(tip?.source_name||'')}">
+    <label>Source URL</label><input id="tipSourceUrl" class="field" value="${esc(tip?.source_url||'')}">
+    <label class="check"><input id="tipActive" type="checkbox" ${tip?.is_active===false?'':'checked'}> Active</label>
+    <div class="row" style="margin-top:16px">
+      <button id="tipSave" class="primary">Save</button>
+      <button id="tipPreview" class="secondary">Preview</button>
+      <button id="tipCancel" class="secondary">Cancel</button>
+      ${tip?'<button id="tipDelete" class="danger">Delete</button>':''}
+    </div>
+    <div id="tipPreviewBox" style="margin-top:14px"></div>
+  </div>`;
+  document.body.appendChild(m);
+
+  function repaintScope(){
+    const cur={
+      species_id:$('#tipSpecies',m).value,
+      stage_tag_id:tip?.stage_tag_id||null,
+      photo_id:tip?.photo_id||null
+    };
+    $('#tipScopeFields',m).innerHTML=scopeFields($('#tipScope',m).value,state,cur);
+  }
+  $('#tipScope',m).onchange=repaintScope;
+  $('#tipSpecies',m).onchange=repaintScope;
+  repaintScope();
+
+  $('#tipCancel',m).onclick=()=>m.remove();
+  $('#tipPreview',m).onclick=()=> {
+    $('#tipPreviewBox',m).innerHTML=previewCard(
+      state.species.find(s=>s.id===$('#tipSpecies',m).value)?.common_name||'Species',
+      $('#tipBody',m).value,
+      $('#tipMemory',m).value,
+      $('#tipSourceName',m).value
+    );
+  };
+  $('#tipSave',m).onclick=async()=>{
+    const sc=$('#tipScope',m).value;
+    const payload={
+      species_id:$('#tipSpecies',m).value,
+      scope:sc,
+      stage_tag_id:sc==='stage'?($('#scopeTag',m)?.value||null):null,
+      photo_id:sc==='photo'?($('#scopePhoto',m)?.value||null):null,
+      body:$('#tipBody',m).value.trim(),
+      memory_text:$('#tipMemory',m).value.trim()||null,
+      source_name:$('#tipSourceName',m).value.trim()||null,
+      source_url:$('#tipSourceUrl',m).value.trim()||null,
+      is_active:$('#tipActive',m).checked
+    };
+    if(!payload.body){$('#tipMsg',m).innerHTML='<div class="error">ID text is required.</div>';return}
+    if(sc==='stage'&&!payload.stage_tag_id){$('#tipMsg',m).innerHTML='<div class="error">Choose a stage tag.</div>';return}
+    if(sc==='photo'&&!payload.photo_id){$('#tipMsg',m).innerHTML='<div class="error">Choose a photo.</div>';return}
+    const r=await saveTip(payload,tip?.id||null);
+    if(r.error){$('#tipMsg',m).innerHTML=`<div class="error">${esc(r.error.message)}</div>`;return}
+    m.remove();await onRefresh();
+  };
+  if(tip)$('#tipDelete',m).onclick=async()=>{
+    if(!confirm('Delete this ID card?'))return;
+    const r=await deleteTip(tip.id);if(r.error){$('#tipMsg',m).innerHTML=`<div class="error">${esc(r.error.message)}</div>`;return}
+    m.remove();await onRefresh();
+  };
+}
+
+function renderComparisonsPage(state,onRefresh){
+  $('#page').innerHTML=`
+    <div class="card"><div class="row"><div class="grow"><h2 style="margin-bottom:4px">Comparison Cards</h2>
+    <div class="muted">Teach the difference when a player chooses a plausible wrong answer.</div></div>
+    <button id="addCmp" class="primary">+ Add Comparison</button></div></div>
+    <div class="card"><input id="cmpSearch" class="field" placeholder="Search correct species, wrong species, or text...">
+    <div id="cmpList" class="list" style="margin-top:12px"></div></div>`;
+  $('#addCmp').onclick=()=>openComparisonModal(state,null,onRefresh);
+  $('#cmpSearch').oninput=()=>paintComparisons(state,onRefresh);
+  paintComparisons(state,onRefresh);
+}
+
+function paintComparisons(state,onRefresh){
+  const q=($('#cmpSearch')?.value||'').toLowerCase();
+  const rows=state.comparisons.filter(c=>{
+    const hay=[c.correct?.common_name,c.wrong?.common_name,c.scope,c.body,c.memory_text,c.stage_tag?.label].join(' ').toLowerCase();
+    return !q||hay.includes(q);
+  });
+  $('#cmpList').innerHTML=rows.map(c=>`
+    <div class="item"><div class="item-main">
+      <b>${esc(c.correct?.common_name||'?')} → guessed ${esc(c.wrong?.common_name||'?')}</b>
+      <div class="small muted">${esc(c.scope)}${c.stage_tag?.label?' • '+esc(c.stage_tag.label):''}</div>
+      <div style="margin-top:6px">${esc(c.body.slice(0,150))}${c.body.length>150?'…':''}</div>
+    </div><button class="secondary editCmp" data-id="${c.id}">Edit</button></div>`).join('')||'<div class="muted">No comparisons yet.</div>';
+  $$('.editCmp').forEach(b=>b.onclick=()=>openComparisonModal(state,state.comparisons.find(c=>c.id===b.dataset.id),onRefresh));
+}
+
+function openComparisonModal(state,c,onRefresh){
+  const m=document.createElement('div');m.className='modal';
+  const correct=c?.correct_species_id||state.species[0]?.id||'';
+  const wrong=c?.wrong_species_id||state.species.find(s=>s.id!==correct)?.id||'';
+  const scope=c?.scope||'general';
+  m.innerHTML=`<div class="modal-card"><h2>${c?'Edit':'Add'} Comparison</h2><div id="cmpMsg"></div>
+    <label>Correct species</label><select id="cmpCorrect" class="field">${state.species.map(s=>`<option value="${s.id}" ${s.id===correct?'selected':''}>${esc(s.common_name)}</option>`).join('')}</select>
+    <label>Wrong guess</label><select id="cmpWrong" class="field">${state.species.map(s=>`<option value="${s.id}" ${s.id===wrong?'selected':''}>${esc(s.common_name)}</option>`).join('')}</select>
+    <label>Comparison type</label><select id="cmpScope" class="field">
+      <option value="general" ${scope==='general'?'selected':''}>General</option>
+      <option value="stage" ${scope==='stage'?'selected':''}>Stage-specific</option>
+      <option value="photo" ${scope==='photo'?'selected':''}>Exact photo</option>
+    </select>
+    <div id="cmpScopeFields"></div>
+    <label>Comparison text</label><textarea id="cmpBody" class="field">${esc(c?.body||'')}</textarea>
+    <label>Remember it</label><textarea id="cmpMemory" class="field">${esc(c?.memory_text||'')}</textarea>
+    <label>Source name</label><input id="cmpSourceName" class="field" value="${esc(c?.source_name||'')}">
+    <label>Source URL</label><input id="cmpSourceUrl" class="field" value="${esc(c?.source_url||'')}">
+    <label class="check"><input id="cmpActive" type="checkbox" ${c?.is_active===false?'':'checked'}> Active</label>
+    <div class="row" style="margin-top:16px"><button id="cmpSave" class="primary">Save</button><button id="cmpPreview" class="secondary">Preview</button><button id="cmpCancel" class="secondary">Cancel</button>${c?'<button id="cmpDelete" class="danger">Delete</button>':''}</div>
+    <div id="cmpPreviewBox" style="margin-top:14px"></div></div>`;
+  document.body.appendChild(m);
+
+  function repaint(){
+    const fake={species_id:$('#cmpCorrect',m).value,stage_tag_id:c?.stage_tag_id||null,photo_id:c?.photo_id||null};
+    $('#cmpScopeFields',m).innerHTML=scopeFields($('#cmpScope',m).value,state,fake);
+  }
+  $('#cmpScope',m).onchange=repaint;$('#cmpCorrect',m).onchange=repaint;repaint();
+  $('#cmpCancel',m).onclick=()=>m.remove();
+  $('#cmpPreview',m).onclick=()=>{
+    const correctName=state.species.find(s=>s.id===$('#cmpCorrect',m).value)?.common_name||'Correct species';
+    const wrongName=state.species.find(s=>s.id===$('#cmpWrong',m).value)?.common_name||'Wrong guess';
+    $('#cmpPreviewBox',m).innerHTML=previewCard(correctName,$('#cmpBody',m).value,$('#cmpMemory',m).value,$('#cmpSourceName',m).value,wrongName);
+  };
+  $('#cmpSave',m).onclick=async()=>{
+    const sc=$('#cmpScope',m).value;
+    const payload={
+      correct_species_id:$('#cmpCorrect',m).value,
+      wrong_species_id:$('#cmpWrong',m).value,
+      scope:sc,
+      stage_tag_id:sc==='stage'?($('#scopeTag',m)?.value||null):null,
+      photo_id:sc==='photo'?($('#scopePhoto',m)?.value||null):null,
+      body:$('#cmpBody',m).value.trim(),
+      memory_text:$('#cmpMemory',m).value.trim()||null,
+      source_name:$('#cmpSourceName',m).value.trim()||null,
+      source_url:$('#cmpSourceUrl',m).value.trim()||null,
+      is_active:$('#cmpActive',m).checked
+    };
+    if(payload.correct_species_id===payload.wrong_species_id){$('#cmpMsg',m).innerHTML='<div class="error">Correct species and wrong guess cannot be the same.</div>';return}
+    if(!payload.body){$('#cmpMsg',m).innerHTML='<div class="error">Comparison text is required.</div>';return}
+    if(sc==='stage'&&!payload.stage_tag_id){$('#cmpMsg',m).innerHTML='<div class="error">Choose a stage tag.</div>';return}
+    if(sc==='photo'&&!payload.photo_id){$('#cmpMsg',m).innerHTML='<div class="error">Choose a photo.</div>';return}
+    const r=await saveComparison(payload,c?.id||null);
+    if(r.error){$('#cmpMsg',m).innerHTML=`<div class="error">${esc(r.error.message)}</div>`;return}
+    m.remove();await onRefresh();
+  };
+  if(c)$('#cmpDelete',m).onclick=async()=>{
+    if(!confirm('Delete this comparison card?'))return;
+    const r=await deleteComparison(c.id);if(r.error){$('#cmpMsg',m).innerHTML=`<div class="error">${esc(r.error.message)}</div>`;return}
+    m.remove();await onRefresh();
+  };
+}
+
+function renderDistractorsPage(state,onRefresh){
+  $('#page').innerHTML=`
+    <div class="card"><h2>Distractors</h2><p class="muted">Choose playable wrong answers and preserve useful look-alike labels that are not playable species.</p>
+    <label>Species</label><select id="distSpecies" class="field">
+      ${state.species.map(s=>`<option value="${s.id}">${esc(s.common_name)}</option>`).join('')}
+    </select></div>
+    <div class="card">
+      <h3>Playable-species distractors</h3><div id="distList"></div>
+      <label>Additional label-only look-alikes</label>
+      <textarea id="distLabels" class="field" placeholder="One look-alike per line"></textarea>
+      <div class="small muted">Use this for useful wrong-answer names that are not species currently playable in the game.</div>
+      <button id="saveDist" class="primary" style="margin-top:14px">Save Distractors</button>
+      <div id="distMsg" style="margin-top:10px"></div>
+    </div>`;
+  $('#distSpecies').onchange=()=>paintDistractors(state);
+  $('#saveDist').onclick=()=>saveDistractorsUI(state,onRefresh);
+  paintDistractors(state);
+}
+function paintDistractors(state){
+  const sid=$('#distSpecies').value;
+  const rows=state.distractors.filter(d=>d.species_id===sid);
+  const current=new Set(rows.filter(d=>d.distractor_species_id).map(d=>d.distractor_species_id));
+  const labels=rows.filter(d=>d.distractor_label).map(d=>d.distractor_label);
+  $('#distList').innerHTML=`<div class="checks">${state.species.filter(s=>s.id!==sid).map(s=>`
+    <label class="check"><input type="checkbox" name="dist" value="${s.id}" ${current.has(s.id)?'checked':''}>${esc(s.common_name)}</label>`).join('')}</div>`;
+  $('#distLabels').value=labels.join('\\n');
+}
+async function saveDistractorsUI(state,onRefresh){
+  const sid=$('#distSpecies').value;
+  const ids=$$('input[name=dist]:checked').map(x=>x.value);
+  const labels=$('#distLabels').value.split(/\\r?\\n/).map(x=>x.trim()).filter(Boolean);
+  const r=await replaceDistractors(sid,ids,labels);
+  if(r.error){$('#distMsg').innerHTML=`<div class="error">${esc(r.error.message)}</div>`;return}
+  $('#distMsg').innerHTML='<div class="ok">Distractors saved.</div>';await onRefresh();
+}
+
+function renderPreviewPage(state){
+  const spOpts=state.species.map(s=>`<option value="${s.id}">${esc(s.common_name)}</option>`).join('');
+  $('#page').innerHTML=`<div class="card"><h2>Player Preview</h2><p class="muted">Preview the active teaching content for one species.</p>
+  <label>Species</label><select id="prevSpecies" class="field">${spOpts}</select></div>
+  <div id="prevContent"></div>`;
+  $('#prevSpecies').onchange=()=>paintPreview(state);
+  paintPreview(state);
+}
+function paintPreview(state){
+  const sid=$('#prevSpecies').value;
+  const sp=state.species.find(s=>s.id===sid);
+  const tips=state.tips.filter(t=>t.species_id===sid&&t.is_active);
+  const cmps=state.comparisons.filter(c=>c.correct_species_id===sid&&c.is_active);
+  const photos=state.photos.filter(p=>p.species_id===sid&&p.is_active);
+  $('#prevContent').innerHTML=`
+    <div class="card"><h3>${esc(sp?.common_name||'')}</h3><div class="muted">${photos.length} active photos • ${tips.length} active ID cards • ${cmps.length} active comparisons</div></div>
+    ${tips.map(t=>`<div class="card">${previewCard(sp.common_name,t.body,t.memory_text,t.source_name)}</div>`).join('')}
+    ${cmps.map(c=>`<div class="card">${previewCard(sp.common_name,c.body,c.memory_text,c.source_name,c.wrong?.common_name)}</div>`).join('')}
+  `;
+}
+function previewCard(title,body,memory,source,wrong=''){
+  return `<div style="border:1px solid #d9e2dc;border-radius:14px;padding:16px;background:#fff">
+    <div class="small muted">${wrong?`You chose: <b>${esc(wrong)}</b>`:'Practice tip'}</div>
+    <h3 style="margin:5px 0 10px">${esc(title)}</h3>
+    <div style="line-height:1.5">${esc(body||'')}</div>
+    ${memory?`<div style="margin-top:12px;background:#edf4ef;border-radius:12px;padding:12px;font-weight:800">Remember it: ${esc(memory)}</div>`:''}
+    ${source?`<div class="small muted" style="margin-top:10px">Source: ${esc(source)}</div>`:''}
+  </div>`;
+}
+
+// --- release.js ---
+
+function renderReleaseBannerPage(state,onRefresh){
+  const releases=[...(state.releases||[])].sort((a,b)=>(b.release_date||'').localeCompare(a.release_date||''));
+  const selected=releases.find(r=>r.version==='7.0')||releases[0];
+
+  if(!selected){
+    $('#page').innerHTML='<div class="card"><h2>Release Banner</h2><div class="muted">No release records found.</div></div>';
+    return;
+  }
+
+  $('#page').innerHTML=`
+    <div class="card">
+      <h2>Release Banner</h2>
+      <p class="muted">This controls the announcement banner shown at the top of the game. No “seen it” tracking is required.</p>
+
+      <label>Release</label>
+      <select id="releaseSelect" class="field">
+        ${releases.map(r=>`<option value="${r.id}" ${r.id===selected.id?'selected':''}>${esc(r.version)} — ${esc(r.title)}</option>`).join('')}
+      </select>
+    </div>
+
+    <div class="card" id="releaseEditor"></div>
+  `;
+
+  $('#releaseSelect').onchange=()=>{
+    const r=releases.find(x=>x.id===$('#releaseSelect').value);
+    paintEditor(r,onRefresh);
+  };
+  paintEditor(selected,onRefresh);
+}
+
+function paintEditor(release,onRefresh){
+  const box=$('#releaseEditor');
+  box.innerHTML=`
+    <h3>${esc(release.version)} Banner</h3>
+    <div id="releaseMsg"></div>
+
+    <label class="check">
+      <input id="bannerEnabled" type="checkbox" ${release.banner_enabled?'checked':''}>
+      Show banner in game
+    </label>
+
+    <label>Banner title</label>
+    <input id="bannerTitle" class="field" value="${esc(release.banner_title||'')}">
+
+    <label>Banner body</label>
+    <textarea id="bannerBody" class="field">${esc(release.banner_body||'')}</textarea>
+
+    <label>Banner stats / footer line</label>
+    <input id="bannerMeta" class="field" value="${esc(release.banner_meta||'')}">
+
+    <div style="margin-top:16px">
+      <div class="small muted" style="margin-bottom:6px">Preview</div>
+      <div class="update-banner">
+        <div id="prevTitle" class="update-banner-title">${esc(release.banner_title||'')}</div>
+        <div id="prevBody" class="update-banner-copy">${esc(release.banner_body||'')}</div>
+        <div id="prevMeta" class="update-banner-meta">${esc(release.banner_meta||'')}</div>
+      </div>
+    </div>
+
+    <button id="saveBanner" class="primary" style="margin-top:16px">Save Banner</button>
+  `;
+
+  const syncPreview=()=>{
+    $('#prevTitle').textContent=$('#bannerTitle').value;
+    $('#prevBody').textContent=$('#bannerBody').value;
+    $('#prevMeta').textContent=$('#bannerMeta').value;
+  };
+  $('#bannerTitle').oninput=syncPreview;
+  $('#bannerBody').oninput=syncPreview;
+  $('#bannerMeta').oninput=syncPreview;
+
+  $('#saveBanner').onclick=async()=>{
+    const payload={
+      banner_enabled:$('#bannerEnabled').checked,
+      banner_title:$('#bannerTitle').value.trim()||null,
+      banner_body:$('#bannerBody').value.trim()||null,
+      banner_meta:$('#bannerMeta').value.trim()||null
+    };
+    const r=await saveReleaseBanner(release.id,payload);
+    if(r.error){
+      $('#releaseMsg').innerHTML=`<div class="error">${esc(r.error.message)}</div>`;
+      return;
+    }
+    $('#releaseMsg').innerHTML='<div class="ok">Banner saved.</div>';
+    await onRefresh();
+  };
+}
+
+let state={session:null,admin:null,species:[],tags:[],photos:[],tips:[],comparisons:[],distractors:[],releases:[],view:'dashboard'};
+async function getSession(){return (await client.auth.getSession()).data.session}
+async function login(email,password){return client.auth.signInWithPassword({email,password})}
+async function logout(){return client.auth.signOut()}
+async function requireAdmin(uid){return client.from('fid_admins').select('display_name').eq('user_id',uid).maybeSingle()}
+async function init(){state.session=await getSession();if(state.session){const a=await requireAdmin(state.session.user.id);state.admin=a.data||null}render();client.auth.onAuthStateChange(async(_e,s)=>{state.session=s;state.admin=null;if(s){const a=await requireAdmin(s.user.id);state.admin=a.data||null}render()})}
+function render(){if(!state.session)return renderLogin();if(!state.admin)return renderDenied();renderShell();refreshAll()}
+function renderLogin(){$('#app').innerHTML=`<div class="login card"><h1>Field ID Challenge CMS</h1><p class="muted">v0.4 Phone Test • MVP Test</p><div id="loginMsg"></div><label>Email</label><input id="email" class="field" type="email"><label>Password</label><input id="pw" class="field" type="password"><button id="login" class="primary" style="width:100%;margin-top:14px">Sign In</button></div>`;$('#login').onclick=async()=>{const r=await login($('#email').value.trim(),$('#pw').value);if(r.error)$('#loginMsg').innerHTML=`<div class="error">${esc(r.error.message)}</div>`}}
+function renderDenied(){$('#app').innerHTML=`<div class="login card"><h2>Not authorized</h2><button id="out" class="secondary">Sign Out</button></div>`;$('#out').onclick=logout}
+function renderShell(){$('#app').innerHTML=`<div class="shell"><header class="topbar"><div class="brand"><b>Field ID Challenge CMS</b><span>v0.4 • ${esc(state.admin.display_name||'Admin')} • Test</span></div><button id="logout" class="secondary">Sign Out</button></header><main class="wrap"><div class="tabs"><button class="tab active" data-view="dashboard">Dashboard</button><button class="tab" data-view="species">Species</button><button class="tab" data-view="photos">Photos</button><button class="tab" data-view="upload">Bulk Upload</button><button class="tab" data-view="tips">ID Cards</button><button class="tab" data-view="comparisons">Comparisons</button><button class="tab" data-view="distractors">Distractors</button><button class="tab" data-view="preview">Preview</button><button class="tab" data-view="release">Release Banner</button></div><div id="page"></div></main></div>`;$('#logout').onclick=logout;$$('.tab').forEach(b=>b.onclick=()=>setView(b.dataset.view));setView(state.view)}
+async function refreshAll(){const [s,t,p,ti,co,di,re]=await Promise.all([loadSpecies(),loadTags(),loadPhotos(),loadTips(),loadComparisons(),loadDistractors(),loadReleases()]);const err=s.error||t.error||p.error||ti.error||co.error||di.error||re.error;if(err){$('#page').innerHTML=`<div class="error">${esc(err.message)}</div>`;return}state.species=s.data||[];state.tags=t.data||[];state.photos=p.data||[];state.tips=ti.data||[];state.comparisons=co.data||[];state.distractors=di.data||[];state.releases=re.data||[];setView(state.view)}
+function setView(v){state.view=v;$$('.tab').forEach(b=>b.classList.toggle('active',b.dataset.view===v));if(v==='dashboard')renderDashboard();if(v==='species')renderSpeciesPage(state,refreshAll);if(v==='photos')renderPhotosPage(state,refreshAll);if(v==='upload')renderUploadPage(state,refreshAll);if(v==='tips')renderTipsPage(state,refreshAll);if(v==='comparisons')renderComparisonsPage(state,refreshAll);if(v==='distractors')renderDistractorsPage(state,refreshAll);if(v==='preview')renderPreviewPage(state);if(v==='release')renderReleaseBannerPage(state,refreshAll)}
+function renderDashboard(){$('#page').innerHTML=`<div class="card"><h2>CMS Dashboard</h2><div class="grid"><div class="stat"><b>${state.species.length}</b>species</div><div class="stat"><b>${state.photos.length}</b>photos</div><div class="stat"><b>${state.tips.length}</b>ID cards</div><div class="stat"><b>${state.comparisons.length}</b>comparisons</div></div></div>`}
+init();
+</script></body></html>
