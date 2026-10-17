@@ -1,6 +1,6 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
-import {readFile} from 'node:fs/promises';
+import {readFile,readdir} from 'node:fs/promises';
 import {PGlite} from '@electric-sql/pglite';
 const admin='11111111-1111-4111-8111-111111111111',alice='22222222-2222-4222-8222-222222222222',bob='33333333-3333-4333-8333-333333333333';
 const placeholder='44444444-4444-4444-8444-444444444444',live='55555555-5555-4555-8555-555555555555';
@@ -25,7 +25,7 @@ test('submission privacy, admin-only decisions, draft publishing, and idempotenc
  insert into auth.users values('${admin}'),('${alice}'),('${bob}');insert into public.fid_admins(user_id) values('${admin}');`);
  const migration=await readFile(new URL('../supabase/migrations/20261017004409_contributor_submissions.sql',import.meta.url),'utf8');
  await db.exec(migration);await db.exec(migration);
- const inatMigration=await readFile(new URL('../supabase/migrations/20261017011108_inaturalist_cc0_photos.sql',import.meta.url),'utf8');await db.exec(inatMigration);await db.exec(inatMigration);
+ for(const file of (await readdir(new URL('../supabase/migrations/',import.meta.url))).filter(f=>f.endsWith('.sql')&&!f.includes('20261017004409')).sort()){const sql=await readFile(new URL('../supabase/migrations/'+file,import.meta.url),'utf8');await db.exec(sql);await db.exec(sql);}
  await db.exec(`insert into fid_species(id,common_name,is_active,publish_status,contribution_only) values('${placeholder}','White snakeroot',false,'draft',true),('${live}','Goldenrod',true,'published',false);`);
  const asUser=async uid=>{await db.exec('reset role');await db.query("select set_config('request.jwt.claim.sub',$1,false)",[uid]);await db.exec('set role authenticated')};
  const owner=async()=>db.exec('reset role');
@@ -43,8 +43,11 @@ test('submission privacy, admin-only decisions, draft publishing, and idempotenc
  assert.equal((await db.query('delete from storage.objects where name=$1 returning *',[`${alice}/${photo}.jpg`])).rows.length,0,'submitted photo cannot be removed');
  const inatPhoto='88888888-8888-4888-8888-888888888888';
  await db.query("insert into storage.objects(bucket_id,name) values('field-id-submissions',$1)",[`${alice}/${inatPhoto}.jpg`]);
- await assert.rejects(db.query("insert into fid_submissions(id,user_id,species_id,kind,credit_name,storage_path,rights_confirmed,photo_origin) values($1,$2,$3,'photo','Alice',$4,true,'inaturalist_cc0')",[inatPhoto,alice,placeholder,`${alice}/${inatPhoto}.jpg`]),/fid_submission_inat_source/);
+ await assert.rejects(db.query("insert into fid_submissions(id,user_id,species_id,kind,credit_name,storage_path,rights_confirmed,photo_origin,source_url) values($1,$2,$3,'photo','Alice',$4,true,'inaturalist_cc0','https://example.org/invalid')",[inatPhoto,alice,placeholder,`${alice}/${inatPhoto}.jpg`]),/fid_submission_inat_source/);
  await db.query("insert into fid_submissions(id,user_id,species_id,kind,credit_name,storage_path,rights_confirmed,photo_origin,source_name,source_url) values($1,$2,$3,'photo','Alice',$4,true,'inaturalist_cc0','Original Photographer','https://www.inaturalist.org/observations/123')",[inatPhoto,alice,placeholder,`${alice}/${inatPhoto}.jpg`]);
+ const optionalPhoto='99999999-9999-4999-8999-999999999999';
+ await db.query("insert into storage.objects(bucket_id,name) values('field-id-submissions',$1)",[`${alice}/${optionalPhoto}.jpg`]);
+ await db.query("insert into fid_submissions(id,user_id,species_id,kind,credit_name,storage_path,rights_confirmed,photo_origin) values($1,$2,$3,'photo','Alice',$4,true,'inaturalist_cc0')",[optionalPhoto,alice,placeholder,`${alice}/${optionalPhoto}.jpg`]);
  await asUser(bob);
  assert.equal((await db.query('select * from fid_submissions')).rows.length,0);
  assert.equal((await db.query("select * from storage.objects where bucket_id='field-id-submissions'")).rows.length,0);
@@ -63,6 +66,11 @@ test('submission privacy, admin-only decisions, draft publishing, and idempotenc
  await db.query("insert into storage.objects(bucket_id,name) values('field-id-content',$1)",[inatPath]);
  await db.query('select fid_review_submission($1,true,null,null,null,$2)',[inatPhoto,inatPath]);
  assert.deepEqual((await db.query('select contributor_credit,photographer,license_code,source_url from fid_photos where storage_path=$1',[inatPath])).rows[0],{contributor_credit:'Alice',photographer:'Original Photographer',license_code:'CC0-1.0',source_url:'https://www.inaturalist.org/observations/123'});
+ const optionalPath=`contributions/${optionalPhoto}.jpg`;
+ await db.query("insert into storage.objects(bucket_id,name) values('field-id-content',$1)",[optionalPath]);
+ await db.query('select fid_review_submission($1,true,null,null,null,$2)',[optionalPhoto,optionalPath]);
+ const optionalApproved=(await db.query('select contributor_credit,photographer,license_code,source_url,attribution_text from fid_photos where storage_path=$1',[optionalPath])).rows[0];
+ assert.equal(optionalApproved.photographer,null);assert.equal(optionalApproved.source_url,null);assert.equal(optionalApproved.license_code,'CC0-1.0');assert.equal(optionalApproved.attribution_text,'CC0 photo. Contribution from Alice');
  await db.query('select fid_publish_contributor_species($1)',[placeholder]);
  assert.deepEqual((await db.query('select is_active,contribution_only,publish_status from fid_species where id=$1',[placeholder])).rows[0],{is_active:true,contribution_only:false,publish_status:'published'});
  assert.equal((await db.query('select publish_status from fid_photos')).rows[0].publish_status,'published');

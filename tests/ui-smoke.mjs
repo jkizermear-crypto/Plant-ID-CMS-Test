@@ -32,9 +32,13 @@ try{
  await page.waitForFunction(()=>Array.from(document.querySelectorAll('#photoGuide img')).every(i=>i.complete&&i.naturalWidth>0));
  await page.getByLabel('Photo source',{exact:true}).selectOption('inaturalist_cc0');
  assert.equal(await page.locator('#inatFields').isVisible(),true);
- await page.getByLabel('iNaturalist observation or photo link').fill('https://www.inaturalist.org/observations/123');
- await page.getByLabel('Original photographer / iNaturalist username').fill('Original Photographer');
+ await page.getByLabel('iNaturalist observation or photo link (optional)').fill('https://www.inaturalist.org/observations/123');
+ await page.getByLabel('Original photographer / iNaturalist username (optional)').fill('Original Photographer');
  assert.match(await page.locator('#rightsText').textContent(),/Research Grade/);
+ assert.match(await page.locator('.field-photo-note').textContent(),/Rosettes/);
+ assert.match(await page.locator('.field-photo-note').textContent(),/herbicide/);
+ assert.equal(await page.locator('#inatUrl').getAttribute('required'),null);
+ assert.equal(await page.locator('#inatPhotographer').getAttribute('required'),null);
  assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true,'guide must fit on mobile');
  await page.locator('#photoGuide').scrollIntoViewIfNeeded();
  await page.screenshot({path:'/tmp/inaturalist-guide.png',fullPage:true});

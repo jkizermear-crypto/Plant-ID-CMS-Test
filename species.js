@@ -81,7 +81,7 @@ function openSpeciesModal(state,sp,onRefresh){
     <label>Common name</label>
     <input id="spCommon" class="field" value="${esc(sp?.common_name||'')}">
 
-    <label>Scientific name</label>
+    <label>Scientific name (optional)</label>
     <input id="spScientific" class="field" value="${esc(sp?.scientific_name||'')}">
 
     <label>Notes</label>
@@ -89,7 +89,7 @@ function openSpeciesModal(state,sp,onRefresh){
 
     <label class="check"><input id="spContributions" type="checkbox" ${sp?.accepts_contributions===false?'':'checked'}> Accept contributor submissions</label>
     <label class="check"><input id="spPreparation" type="checkbox" ${!sp||sp.contribution_only?'checked':''} ${sp?.contribution_only?'disabled':''}> In preparation — collect contributions without appearing in the game</label>
-    <p class="small muted">Contributors select this exact record. Only you can add species. Publish a prepared species after approving at least one photo.</p>
+    <p class="small muted">A common name is enough to create an empty species record for contributors to fill with photos and tips. Contributors select this exact record. Only you can add species. Publish a prepared species after approving at least one photo.</p>
     <label class="check">
       <input id="spActive" type="checkbox" ${sp?.is_active===false?'':'checked'}>
       Active in game

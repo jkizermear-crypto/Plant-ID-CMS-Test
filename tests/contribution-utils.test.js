@@ -15,10 +15,11 @@ test('reference urls reject executable schemes',()=>{
  assert.equal(safeUrl('javascript:alert(1)'),'');assert.equal(safeUrl('https://example.org/'),'https://example.org/');
 });
 
-test('iNaturalist sources require the original creator, source link, and explicit checks',()=>{
+test('iNaturalist links and photographers are optional; supplied links and license confirmation are validated',()=>{
  assert.deepEqual(validatePhotoSource('own','','',true),{photo_origin:'own'});
  assert.equal(validatePhotoSource('inaturalist_cc0','https://www.inaturalist.org/observations/123','Photographer',true).source_name,'Photographer');
  for(const url of ['https://inaturalist.org.evil.test/observations/123','https://evil.test/','javascript:alert(1)','https://www.inaturalist.org/people/123'])assert.throws(()=>validatePhotoSource('inaturalist_cc0',url,'Creator',true));
- assert.throws(()=>validatePhotoSource('inaturalist_cc0','https://www.inaturalist.org/photos/123','',true),/photographer/);
+ assert.deepEqual(validatePhotoSource('inaturalist_cc0','','',true),{photo_origin:'inaturalist_cc0',source_url:null,source_name:null});
+ assert.equal(validatePhotoSource('inaturalist_cc0','https://www.inaturalist.org/photos/123','',true).source_name,null);
  assert.throws(()=>validatePhotoSource('inaturalist_cc0','https://www.inaturalist.org/photos/123','Creator',false),/confirm/);
 });

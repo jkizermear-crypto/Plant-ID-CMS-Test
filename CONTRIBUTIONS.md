@@ -31,8 +31,12 @@ For browser smoke tests: `npx playwright install chromium` then `npm run test:ui
 
 ## iNaturalist CC0 photos
 
-The contributor page includes an expandable guide with Dean’s annotated screenshots. Contributors select the exact species, filter Photo Licensing to CC0 and observations to Research Grade, and prefer more agreeing species-level IDs. They must check the exact photo’s license and upload the actual photo file.
+The contributor page includes an expandable guide with Dean’s annotated screenshots. Contributors select the exact species by common name (scientific names are optional), filter Photo Licensing to CC0 and observations to Research Grade, and prefer more agreeing species-level IDs. They must check the exact photo’s license and upload the actual photo file.
 
-The photo source selector supports original photos and iNaturalist CC0 photos. CC0 submissions require the original photographer/username, an iNaturalist observation or photo URL, and confirmation that both CC0 and Research Grade were checked. Approval preserves photographer, source URL and CC0-1.0 licensing separately from the submitter’s contribution credit. This is a contributor declaration followed by admin review, not an automated verification of iNaturalist metadata.
+The photo source selector supports original photos and iNaturalist CC0 photos. CC0 submissions require confirmation that both CC0 and Research Grade were checked. The original photographer/username and iNaturalist observation or photo URL are optional. Approval preserves photographer, source URL and CC0-1.0 licensing separately from the submitter’s contribution credit. This is a contributor declaration followed by admin review, not an automated verification of iNaturalist metadata.
 
 Apply `supabase/migrations/20261017011108_inaturalist_cc0_photos.sql` before deploying this update.
+
+Photo guidance emphasizes seasonal variety and realistic field conditions: rosettes, seedlings, seed heads, dormant plants, resprouts, regrowth, and plants affected by prior herbicide treatment. Avoid filling the library with near-identical perfect flower photos.
+
+Apply `supabase/migrations/20261017013421_optional_photo_metadata.sql` to make CC0 source links and photographer names optional. Scientific names are optional when creating species.

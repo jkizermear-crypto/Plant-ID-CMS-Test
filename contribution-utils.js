@@ -12,9 +12,11 @@ export function validatePhotoSource(origin,url,photographer,confirmed){
  if(!confirmed)throw new Error('Please confirm the photo ownership or CC0 and Research Grade checks.');
  if(origin==='own')return {photo_origin:'own'};
  if(origin!=='inaturalist_cc0')throw new Error('Choose a supported photo source.');
- let source;try{source=new URL(url.trim())}catch{throw new Error('Add the iNaturalist observation or photo link.');}
- if(source.protocol!=='https:'||!['www.inaturalist.org','inaturalist.org'].includes(source.hostname)||!/^\/(observations|photos)\/\d+\/?$/.test(source.pathname)||source.username||source.password||source.port)
-  throw new Error('Use an https://www.inaturalist.org/observations/123 or /photos/123 link.');
- if(!photographer.trim())throw new Error('Add the original photographer or iNaturalist username.');
- return {photo_origin:'inaturalist_cc0',source_url:source.href,source_name:photographer.trim()};
+ let source=null;
+ if(url.trim()){
+  try{source=new URL(url.trim())}catch{throw new Error('Enter a valid iNaturalist link, or leave it blank.');}
+  if(source.protocol!=='https:'||!['www.inaturalist.org','inaturalist.org'].includes(source.hostname)||!/^\/(observations|photos)\/\d+\/?$/.test(source.pathname)||source.username||source.password||source.port)
+   throw new Error('Use an https://www.inaturalist.org/observations/123 or /photos/123 link, or leave it blank.');
+ }
+ return {photo_origin:'inaturalist_cc0',source_url:source?.href||null,source_name:photographer.trim()||null};
 }
