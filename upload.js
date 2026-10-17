@@ -4,7 +4,7 @@ import {uploadImage} from './storage.js';
 import {STORAGE_BUCKET} from './config.js';
 
 export function renderUploadPage(state,onRefresh){
-  const opts=state.species.filter(x=>x.is_active).map(s=>`<option value="${s.id}">${esc(s.common_name)}</option>`).join('');
+  const opts=state.species.filter(x=>x.is_active||x.contribution_only).map(s=>`<option value="${s.id}">${esc(s.common_name)}</option>`).join('');
   $('#page').innerHTML=`<div class="card"><h2>Bulk Photo Upload</h2><p class="muted">Upload many images to one species at once and apply initial tags to the whole batch.</p><div id="upMsg"></div>${workingReleaseNotice(state)}
   <label>Species</label><select id="upSpecies" class="field"><option value="">Choose species...</option>${opts}</select>
   <label>Photos</label><input id="upFiles" class="field" type="file" accept="image/jpeg,image/png,image/webp" multiple>
@@ -31,7 +31,7 @@ async function uploadBatch(state,onRefresh){
     $('#upMsg').innerHTML=`<div class="ok">Uploading ${i+1} of ${files.length}: ${esc(file.name)}</div>`;
     const u=await uploadImage(path,file); if(u.error){$('#upMsg').innerHTML=`<div class="error">${esc(u.error.message)}</div>`;$('#upGo').disabled=false;return}
     const rel=workingRelease(state);
-    const releaseMeta=rel?{release_id:rel.id,publish_status:rel.status==='published'?'published':'draft'}:{};
+    const releaseMeta={release_id:rel?.id||null,publish_status:sp.contribution_only||rel?.status!=='published'?'draft':'published'};
     const p=await supabase.from('fid_photos').insert({species_id:speciesId,storage_path:path,original_filename:file.name,orientation_degrees:orientation,is_active:true,...releaseMeta}).select('id').single();
     if(p.error){await supabase.storage.from(STORAGE_BUCKET).remove([path]);$('#upMsg').innerHTML=`<div class="error">${esc(p.error.message)}</div>`;$('#upGo').disabled=false;return}
     if(tagIds.length){
