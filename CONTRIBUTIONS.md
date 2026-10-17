@@ -28,3 +28,11 @@ Pending photos are stored in private `field-id-submissions` storage. The reviewe
 `npm ci`, `npm test`, `npm run build`.
 
 For browser smoke tests: `npx playwright install chromium` then `npm run test:ui`. Browser tests mock Supabase responses and cover the mobile signup and contribution forms. SQL tests execute PostgreSQL with PGlite using the repository's original schema plus a fixture for the later release-aware columns. They verify row/storage isolation, write restrictions, admin-only review, idempotency, draft publishing, and normalized name duplicate rejection. They do not replace a live Supabase integration test.
+
+## iNaturalist CC0 photos
+
+The contributor page includes an expandable guide with Dean’s annotated screenshots. Contributors select the exact species, filter Photo Licensing to CC0 and observations to Research Grade, and prefer more agreeing species-level IDs. They must check the exact photo’s license and upload the actual photo file.
+
+The photo source selector supports original photos and iNaturalist CC0 photos. CC0 submissions require the original photographer/username, an iNaturalist observation or photo URL, and confirmation that both CC0 and Research Grade were checked. Approval preserves photographer, source URL and CC0-1.0 licensing separately from the submitter’s contribution credit. This is a contributor declaration followed by admin review, not an automated verification of iNaturalist metadata.
+
+Apply `supabase/migrations/20261017011108_inaturalist_cc0_photos.sql` before deploying this update.

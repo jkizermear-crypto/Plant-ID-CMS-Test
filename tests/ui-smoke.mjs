@@ -26,6 +26,18 @@ try{
  await page.reload();await page.getByRole('heading',{name:'Make a contribution'}).waitFor();
  await page.getByLabel('Species',{exact:true}).selectOption(species[0].id);
  assert.match(await page.locator('#speciesHelp').textContent(),/in preparation/);
+ await page.locator('#photoGuide summary').click();
+ assert.equal(await page.locator('#photoGuide img').count(),2);
+ await page.locator('#photoGuide img').last().scrollIntoViewIfNeeded();
+ await page.waitForFunction(()=>Array.from(document.querySelectorAll('#photoGuide img')).every(i=>i.complete&&i.naturalWidth>0));
+ await page.getByLabel('Photo source',{exact:true}).selectOption('inaturalist_cc0');
+ assert.equal(await page.locator('#inatFields').isVisible(),true);
+ await page.getByLabel('iNaturalist observation or photo link').fill('https://www.inaturalist.org/observations/123');
+ await page.getByLabel('Original photographer / iNaturalist username').fill('Original Photographer');
+ assert.match(await page.locator('#rightsText').textContent(),/Research Grade/);
+ assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true,'guide must fit on mobile');
+ await page.locator('#photoGuide').scrollIntoViewIfNeeded();
+ await page.screenshot({path:'/tmp/inaturalist-guide.png',fullPage:true});
  await page.getByRole('radio',{name:'ID tip'}).check();
  assert.equal(await page.locator('#photoFields').isVisible(),false);
  await page.getByLabel('Species',{exact:true}).selectOption(species[0].id);

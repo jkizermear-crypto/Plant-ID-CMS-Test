@@ -1,6 +1,6 @@
 import {$,esc} from './utils.js';
 import {supabase} from './supabase.js';
-import {validatePhoto,missingTip,safeUrl} from './contribution-utils.js';
+import {validatePhoto,missingTip,safeUrl,validatePhotoSource} from './contribution-utils.js';
 const PENDING_BUCKET='field-id-submissions';
 const checked=r=>{if(r.error)throw r.error;return r.data};
 async function allRows(table){let out=[];for(let from=0;;from+=1000){const rows=checked(await supabase.from(table).select('*').order('created_at',{ascending:false}).range(from,from+999));out.push(...rows);if(rows.length<1000)return out}}
@@ -23,16 +23,29 @@ export async function renderContributorPortal(session){
 function renderForm(state){
  const {session,catalog,tags,submissions}=state;
  $('#contributorPage').innerHTML=`<section class="card contribution-hero"><span class="pill">Help the field guide grow</span><h1>A good eye makes a better game.</h1><p>Share a plant photo or fill a missing ID tip. Dean reviews every submission before it can appear in the game.</p></section>
+ <section class="card photo-guide"><details id="photoGuide"><summary><strong>How to find iNaturalist photos for the game</strong><span class="small muted">CC0 · Research Grade · Strong community agreement</span></summary><div class="guide-body">
+ <ol><li><b>Search for the exact species.</b> Open <a href="https://www.inaturalist.org/observations" target="_blank" rel="noopener">iNaturalist Observations</a> and select the plant’s scientific name. A broad search such as “Goldenrods” includes several species: the photo must match the exact species you select here.</li>
+ <li><b>Set the filters.</b> Open Filters, select <b>Verifiable</b> and <b>Research Grade</b>, then open More Filters. Under <b>Photo Licensing</b>, choose <b>CC0</b> (zero), and select <b>Update Search</b>. Use the photo’s license, which is separate from the observation-data license.</li></ol>
+ <figure><a href="/guide/inaturalist-filters.jpg" target="_blank" rel="noopener"><img src="/guide/inaturalist-filters.jpg" loading="lazy" alt="Annotated iNaturalist filters: Verifiable and Research Grade checked, and Photo Licensing set to CC0."></a><figcaption>1. Use Research Grade and CC0 photo licensing. Tap either image to enlarge.</figcaption></figure>
+ <ol start="3"><li><b>Compare identifications in List view.</b> The number beside the ID badge (circled below) is the identification count. Aim for <b>2 or more</b>, and prefer a higher number of <b>agreeing species-level identifications</b> when photo quality is comparable. Open the observation to check what people identified; the total count alone can include broader or disagreeing IDs.</li>
+ <li><b>Choose clear teaching photos.</b> Look for visible leaves, flowers, fruit, stems, bark, or winter features. More IDs is a preference, not a guarantee that the plant is correctly identified.</li>
+ <li><b>Check and save the exact photo.</b> Open its CC/license details and confirm <b>CC0</b>. Download or save the actual photo, rather than taking a screenshot of the observation page. Copy its iNaturalist observation or photo link and the photographer’s name or username.</li>
+ <li><b>Submit it below.</b> Choose “iNaturalist — CC0 photo,” upload the file, add the source link and photographer, select the features shown, and send it for Dean’s approval. You receive the contribution credit; the original photographer remains recorded separately.</li></ol>
+ <figure><a href="/guide/inaturalist-identifications.jpg" target="_blank" rel="noopener"><img src="/guide/inaturalist-identifications.jpg" loading="lazy" alt="Annotated iNaturalist List view: identification count of 2 circled beside a Research Grade observation, with a handwritten 2 plus reminder."></a><figcaption>2. Favor more agreeing identifications; open the observation to check agreement.</figcaption></figure>
+ <p class="small muted">References: <a href="https://help.inaturalist.org/en/support/solutions/articles/151000169918" target="_blank" rel="noopener">iNaturalist photo reuse</a> · <a href="https://help.inaturalist.org/en/support/solutions/articles/151000194901-how-do-identifications-work-" target="_blank" rel="noopener">How identifications work</a></p>
+ </div></details></section>
  <section class="card"><h2>Your photo credit</h2><p class="muted">This name will appear publicly below approved photos as “Contribution from …”. Your email stays private.</p><label for="creditName">Public credit name</label><input id="creditName" class="field" maxlength="80" required value="${esc(state.profile?.display_name||session.user.user_metadata?.display_name||'')}" placeholder="Your name or nickname"><p class="small muted">Choose a name you are comfortable showing to players.</p></section>
  <form id="contributionForm" class="card"><h2>Make a contribution</h2><div id="contributionMsg" role="status"></div>
  <div class="row"><label class="check"><input type="radio" name="kind" value="photo" checked> Photo</label><label class="check"><input type="radio" name="kind" value="tip"> ID tip</label></div>
  <label for="speciesQuery">Find a species</label><input id="speciesQuery" class="field" type="search" placeholder="Search common or scientific name">
  <label class="check"><input id="needsTips" type="checkbox"> Show species missing a general ID tip</label>
  <label for="contributionSpecies">Species</label><select id="contributionSpecies" class="field" required></select><p id="speciesHelp" class="small muted"></p>
- <div id="photoFields"><label for="contributionPhoto">Photo</label><input id="contributionPhoto" class="field" type="file" accept="image/jpeg,image/png,image/webp"><p class="small muted">JPG, PNG, or WebP · up to 10 MB</p><img id="contributionPreview" class="contribution-preview" alt="Your selected photo" hidden>
+ <div id="photoFields"><label for="photoOrigin">Photo source</label><select id="photoOrigin" class="field"><option value="own">My own photo</option><option value="inaturalist_cc0">iNaturalist — CC0 photo</option></select>
+ <div id="inatFields" hidden><p class="small muted">Follow the iNaturalist guide above. Use a Research Grade observation and check that this exact photo is CC0.</p><label for="inatUrl">iNaturalist observation or photo link</label><input id="inatUrl" class="field" type="url" maxlength="2000" placeholder="https://www.inaturalist.org/observations/…"><label for="inatPhotographer">Original photographer / iNaturalist username</label><input id="inatPhotographer" class="field" maxlength="300"></div>
+ <label for="contributionPhoto">Photo</label><input id="contributionPhoto" class="field" type="file" accept="image/jpeg,image/png,image/webp"><p class="small muted">JPG, PNG, or WebP · up to 10 MB</p><img id="contributionPreview" class="contribution-preview" alt="Your selected photo" hidden>
  <label for="contributionOrientation">Rotation</label><select id="contributionOrientation" class="field"><option value="0">Normal</option><option value="90">90° clockwise</option><option value="180">180°</option><option value="270">90° counterclockwise</option></select>
  <label>Visible features</label><div class="checks">${tags.map(t=>`<label class="check"><input type="checkbox" name="contributionTag" value="${esc(t.id)}">${esc(t.label)}</label>`).join('')}</div>
- <label class="check"><input id="contributionRights" type="checkbox"> I took this photo and give permission to display it in Thistle Be Fun with my credit.</label></div>
+ <label class="check"><input id="contributionRights" type="checkbox"> <span id="rightsText">I took this photo and give permission to display it in Thistle Be Fun with my credit.</span></label></div>
  <div id="tipFields" hidden><label for="tipStage">Tip applies to</label><select id="tipStage" class="field"></select><label for="contributionBody">How can someone recognize this plant?</label><textarea id="contributionBody" class="field" rows="6" maxlength="6000" placeholder="Describe useful identifying features and how to distinguish look-alikes."></textarea><label for="contributionMemory">Memory trick (optional)</label><textarea id="contributionMemory" class="field" maxlength="1000"></textarea><label for="contributionSource">Reference name (optional)</label><input id="contributionSource" class="field" maxlength="300"><label for="contributionUrl">Reference link (optional)</label><input id="contributionUrl" class="field" type="url" maxlength="2000" placeholder="https://…"><p class="small muted">Focus on identification. Include a reference for botanical claims.</p></div>
  <button id="submitContribution" class="primary" style="margin-top:18px">Send for approval</button></form>
  <section class="card"><h2>Your submissions</h2><div id="mySubmissions"></div></section>`;
@@ -57,6 +70,11 @@ function renderForm(state){
   $('#needsTips').checked=kind()==='tip';paintSpecies();
  });
  $('#speciesQuery').oninput=paintSpecies;$('#needsTips').onchange=paintSpecies;$('#contributionSpecies').onchange=paintNeeds;paintSpecies();
+ $('#photoOrigin').onchange=()=>{
+  const inat=$('#photoOrigin').value==='inaturalist_cc0';
+  $('#inatFields').hidden=!inat;$('#contributionRights').checked=false;
+  $('#rightsText').textContent=inat?'I checked that the observation is Research Grade and this exact photo is CC0. I recorded the original photographer and source link.':'I took this photo and give permission to display it in Thistle Be Fun with my credit.';
+ };
  $('#contributionPhoto').onchange=()=>{
   if(previewUrl)URL.revokeObjectURL(previewUrl);
   const f=$('#contributionPhoto').files[0];$('#contributionPreview').hidden=!f;
@@ -72,7 +90,9 @@ function renderForm(state){
    const row={id:crypto.randomUUID(),user_id:session.user.id,species_id:sp.id,kind:kind(),credit_name:name};
    if(row.kind==='photo'){
     const file=$('#contributionPhoto').files[0],ext=validatePhoto(file);
-    if(!$('#contributionRights').checked)throw new Error('Please confirm you own the photo and give permission to display it.');
+    const origin=$('#photoOrigin').value;
+    const metadata=validatePhotoSource(origin,$('#inatUrl').value,$('#inatPhotographer').value,$('#contributionRights').checked);
+    Object.assign(row,metadata);
     // Decode before uploading, rejecting files that only pretend to be images.
     const bitmap=await createImageBitmap(file);bitmap.close();
     path=`${session.user.id}/${row.id}.${ext}`;
@@ -115,6 +135,12 @@ export async function renderReviewPage(state,onRefresh){
     if(row.kind==='photo'){
      const signed=checked(await supabase.storage.from(PENDING_BUCKET).createSignedUrl(row.storage_path,600));
      const img=document.createElement('img');img.className='contribution-preview';img.src=signed.signedUrl;img.alt='Submitted plant photo';img.style.transform=`rotate(${row.orientation_degrees}deg)`;media.appendChild(img);
+     if(row.photo_origin==='inaturalist_cc0'){
+      const source=document.createElement('p');source.className='small';
+      source.append(document.createTextNode(`iNaturalist CC0 · Photo by ${row.source_name||'Unknown'} · `));
+      const url=safeUrl(row.source_url);if(url){const link=document.createElement('a');link.href=url;link.target='_blank';link.rel='noopener';link.textContent='Open source to verify license and IDs';source.append(link)}
+      media.appendChild(source);
+     }
      const tagText=document.createElement('p');tagText.className='small muted';tagText.textContent=(row.tag_ids||[]).map(id=>state.tags.find(t=>t.id===id)?.label).filter(Boolean).join(' · ');media.appendChild(tagText);
     }else{
      media.innerHTML=`<p class="small muted">${row.scope==='general'?'General tip':esc(state.tags.find(t=>t.id===row.stage_tag_id)?.label||'Stage tip')}</p><label>ID tip (edit before approval)</label><textarea class="field reviewBody" rows="5" maxlength="6000" ${status!=='pending'?'disabled':''}>${esc(row.body)}</textarea><label>Memory trick</label><textarea class="field reviewMemory" maxlength="1000" ${status!=='pending'?'disabled':''}>${esc(row.memory_text||'')}</textarea><p class="small muted">${esc(row.source_name||'No reference supplied')} ${esc(row.source_url||'')}</p>`;
