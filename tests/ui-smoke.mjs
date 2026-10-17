@@ -1,0 +1,38 @@
+// Browser smoke tests use mocked Supabase responses; database policy tests run separately.
+import {chromium} from 'playwright';
+import {createServer} from 'vite';
+import assert from 'node:assert/strict';
+const server=await createServer({root:new URL('..',import.meta.url).pathname,server:{host:'127.0.0.1',port:5179}});await server.listen();
+const browser=await chromium.launch({headless:true,executablePath:process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH||undefined,args:['--no-sandbox','--disable-dev-shm-usage']});
+const uid='22222222-2222-4222-8222-222222222222';
+const species=[{id:'44444444-4444-4444-8444-444444444444',common_name:'White snakeroot',scientific_name:'Ageratina altissima',contribution_only:true,has_general_tip:false,tip_stage_ids:[]},{id:'55555555-5555-4555-8555-555555555555',common_name:'Goldenrod',scientific_name:'Solidago',contribution_only:false,has_general_tip:true,tip_stage_ids:[]}];
+try{
+ const page=await browser.newPage({viewport:{width:390,height:844}});const errors=[];page.on('pageerror',e=>errors.push(e.message));
+ await page.goto('http://127.0.0.1:5179/?contribute=1');
+ await page.getByRole('button',{name:'Create a contributor account'}).click();
+ await page.getByLabel('Public credit name').waitFor();assert.equal(await page.locator('#signupFields').isVisible(),true);
+ assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true,'mobile login must not overflow');
+ await page.screenshot({path:'/tmp/contributor-login.png',fullPage:true});
+ const header=Buffer.from(JSON.stringify({alg:'HS256',typ:'JWT'})).toString('base64url');
+ const payload=Buffer.from(JSON.stringify({sub:uid,exp:Math.floor(Date.now()/1000)+3600,role:'authenticated'})).toString('base64url');
+ await page.addInitScript(({uid,token})=>localStorage.setItem('sb-mnbfglpvwkvpsbfgifro-auth-token',JSON.stringify({access_token:token,refresh_token:'mock-refresh-token',expires_at:Math.floor(Date.now()/1000)+3600,expires_in:3600,token_type:'bearer',user:{id:uid,aud:'authenticated',role:'authenticated',email:'test@example.org',user_metadata:{display_name:'Alice'}}})),{uid,token:`${header}.${payload}.mock`});
+ await page.route('https://mnbfglpvwkvpsbfgifro.supabase.co/**',async route=>{
+  const url=route.request().url();let body=[];
+  if(url.includes('fid_contribution_catalog'))body=species;
+  else if(url.includes('fid_contributor_profiles'))body={user_id:uid,display_name:'Alice'};
+  else if(url.includes('fid_tags'))body=[{id:'88888888-8888-4888-8888-888888888888',slug:'flower',label:'Flower'}];
+  await route.fulfill({status:200,contentType:'application/json',body:JSON.stringify(body)});
+ });
+ await page.reload();await page.getByRole('heading',{name:'Make a contribution'}).waitFor();
+ await page.getByLabel('Species',{exact:true}).selectOption(species[0].id);
+ assert.match(await page.locator('#speciesHelp').textContent(),/in preparation/);
+ await page.getByRole('radio',{name:'ID tip'}).check();
+ assert.equal(await page.locator('#photoFields').isVisible(),false);
+ await page.getByLabel('Species',{exact:true}).selectOption(species[0].id);
+ assert.equal(await page.locator('#contributionSpecies option').count(),2,'missing-tip filter hides species with existing general tips');
+ await page.getByLabel('How can someone recognize this plant?').fill('Opposite leaves and white flower clusters.');
+ assert.equal(await page.locator('#tipStage').isDisabled(),false);
+ assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true,'mobile portal must not overflow');
+ await page.screenshot({path:'/tmp/contributor-portal.png',fullPage:true});
+ assert.deepEqual(errors,[]);console.log('PASS: mobile signup, signed-in catalog, placeholder guidance, missing-tip filter, tip form, and no page errors.');
+}finally{await browser.close();await server.close()}
